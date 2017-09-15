@@ -1,0 +1,4 @@
+total 20
+-rwxrwxr-x 1 etonkan91 etonkan91 13616 Sep 15 15:28 myShell
+-rw-rw-r-- 1 etonkan91 etonkan91  3037 Sep 15 15:27 myShell.c
+-rw-rw-r-- 1 etonkan91 etonkan91     0 Sep 15 15:28 Testing.txt
