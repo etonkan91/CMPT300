@@ -43,9 +43,31 @@ int check_greater_than(char *argv[], int maxSize)
 	return -1;
 }
 
+int check_lesser_than(char *argv[], int maxSize)
+{
+	int i = 0;
+	while(argv[i] != NULL && i < maxSize - 1)
+	{
+		if(strcmp(argv[i],"<") == 0 && argv[i+1] != NULL)
+		{
+			argv[i] = argv[i+1];
+			argv[i+1] = NULL;
+			return i+1;
+		}
+		else if (strcmp(argv[i],">") == 0 && argv[i+1] == NULL)
+		{
+			return -2;
+		}
+		else
+		{
+		i++;
+		}
+	}
+	return -1;
+}
 
 int main() {
-  int i, exist_ampersand, closefd, exist_greater_than;
+  int i, exist_ampersand, closefd, exist_greater_than, exist_lesser_than;
   char user_commands[50];
   char *argv[50]; 
   char cwd[50];
@@ -121,6 +143,7 @@ int main() {
 		  else
 		  {
 			exist_greater_than = check_greater_than(argv, 50);
+			exist_lesser_than = check_lesser_than(argv, 50);
 			if(exist_greater_than > 0)
 			{
 				fd = freopen(argv[exist_greater_than], "w", stdout);
