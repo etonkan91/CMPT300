@@ -1,3 +1,10 @@
+/*
+// CMPT300 Assignment1
+// File name: myShell.c
+// Author: Eton Kan
+// Student Number: 301235768
+// Date: Sept 15,2017
+*/
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
