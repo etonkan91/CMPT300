@@ -1,0 +1,14 @@
+Author: Eton Kan
+Student ID: 301235768
+Class: CMPT300
+Homework Number: 1
+Task: Build a simple shell
+Due Date: Sept 29, 2017
+
+Functions created: main(), check_amperand(), check_greater_than() and check_lesser_than()
+check_amperand(): is used to look for & and NULL in user's command so it can run with background process
+check_greater_than(): is used to look for > and filename in user's command so it write to a file
+check_lesser_than(): is used to look for < so it can remove it and execute the command
+main(): this function contain the algorithm for turning user command into tokens, 
+	creating a child process after using the check functions above, and
+	opening and closing files after writing the output of the shell to it.
