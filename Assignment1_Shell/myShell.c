@@ -1,11 +1,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <signal.h>
-
+/*
+// Name: check_ampersand()
+// Feature: Looking for '&' followed by NULL in the avgr
+// Return Values: if condition is met return 1 
+//				  else return 0
+*/
 int check_ampersand(char *argv[], int maxSize)
 {
 	int i = 0;
@@ -22,6 +26,13 @@ int check_ampersand(char *argv[], int maxSize)
 	return 0;
 }
 
+/*
+// Name: check_greater_than()
+// Feature: Looking for '>' and not followed by NULL in the avgr
+// Return Values: if condition is met return the file name location in the argv array return i+1
+//				  else if > is followed by NULL return -2
+//				  else not found return -1
+*/
 int check_greater_than(char *argv[], int maxSize)
 {
 	int i = 0;
@@ -43,6 +54,13 @@ int check_greater_than(char *argv[], int maxSize)
 	return -1;
 }
 
+/*
+// Name: check_greater_than()
+// Feature: Looking for '<' and not followed by NULL in the avgr
+// Return Values: if condition is met return the file name location in the argv array return i+1
+//				  else if > is followed by NULL return -2
+//				  else not found return -1
+*/
 int check_lesser_than(char *argv[], int maxSize)
 {
 	int i = 0;
@@ -66,44 +84,50 @@ int check_lesser_than(char *argv[], int maxSize)
 	return -1;
 }
 
+/*
+// Name: main()
+// Feature: a Shell that supports 'exit', a command with or without arguments,
+			commands executed with &, redirecting output to a file, and 
+			taking input from a file
+// Return Values: No return Values 
+//				  Program ends only on 'exit' command from user
+*/
 int main() {
   int i, exist_ampersand, closefd, exist_greater_than, exist_lesser_than;
   char user_commands[50];
   char *argv[50]; 
   char cwd[50];
-  char filename;
-  pid_t pid;
-  FILE *fd;
+  pid_t pid; // for forking
+  FILE *fd; //for freopen commands
   
+  //Infinite loop, exit only when user enter command 'exit'
   while(1) 
   {
-    i = 0;
+    //Setting all values to default values
+	i = 0;
 	closefd = 0;
 	exist_ampersand = 0;
 	sigset(SIGCHLD, SIG_DFL);
-	//Ask user to type in commands
+	
+	//Prompting user to enter commands
     printf("Commands:");
-    //Get the user commands
+    //Getting the user commands
     if(fgets(user_commands, 50, stdin) == NULL)
     {
       printf("ERROR: Unable to get User Commands\n");
       break;
     }
 	
-	// Tokenizer that will take the input and put it in an array
-	//Break the buffer into tokens that are separated by a delimiter
+	//Breaking the user commands into tokens by delimiter (space, tab, newline)
 	argv[i] = strtok(user_commands, " \t\n");
 	while(argv[i] != NULL)
 	{
-		// printf("%s ", argv[i]);
-		// printf("%d", i);
 		argv[++i] = strtok(NULL, " \t\n");
 	}
 	
+	//Checking to make sure user command is separated and stored in the argv array
     if(argv[0] != NULL)
     {
-      // printf("I am in the != NULL ");
-	  // printf("%s ", argv[0]);
 	  if(check_ampersand(argv, 50) == 1)
 	  {
 		  exist_ampersand = 1;
@@ -111,7 +135,7 @@ int main() {
 	  //1.The internal shell command "exit" which terminates the shell
 	  if(strcmp(argv[0],"exit") == 0)
       {
-        printf("GoodBye\n");
+        //printf("GoodBye\n");
         exit(0);
       } 
 	  else
@@ -119,7 +143,6 @@ int main() {
 		  //2. A command with no arguments
 		  //3. A command with arguments
 		  pid = fork();
-		  //printf("pid is %d \n",pid);
 		  //Unable to fork due to error
 		  if(pid < 0)
 		  {
@@ -136,20 +159,26 @@ int main() {
 			}
 			else
 			{
+				//wait for the child process to finish
 				wait(NULL);
 			}
 		  }
 		  //Child Process
 		  else
 		  {
+			//Checking if there is < or > in the user's command
 			exist_greater_than = check_greater_than(argv, 50);
 			exist_lesser_than = check_lesser_than(argv, 50);
+			//If > exist, then create the file according to the name provided by user
 			if(exist_greater_than > 0)
 			{
+				//Making the file and changing the output to the file
 				fd = freopen(argv[exist_greater_than], "w", stdout);
 				argv[exist_greater_than - 1] = NULL;
 				argv[exist_greater_than] = NULL;
+				//Setting a signal so it can close the connection to the file
 				closefd = 1;
+				//Execute user's command
 				if(execvp(argv[0], argv) == -1)
 				{
 					printf("ERROR: %s \n", strerror(errno));
@@ -159,14 +188,15 @@ int main() {
 			{
 				printf("Error: missing file name in the command");
 			}
-			//It will read the user_command and execute the argv[0]
 			else
 			{
+				//Execute user's command
 				if(execvp(argv[0], argv) == -1)
 				{
 					printf("ERROR: %s \n", strerror(errno));
 				}
 			}
+			//Closing the file that were opened so the standard output will go back to the terminal
 			if(closefd == 1)
 			{
 				fclose(fd);
