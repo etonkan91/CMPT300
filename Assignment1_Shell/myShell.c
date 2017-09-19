@@ -3,7 +3,7 @@
 // File name: myShell.c
 // Author: Eton Kan
 // Student Number: 301235768
-// Date: Sept 15,2017
+// Date: Sept 18,2017
 */
 #include <stdio.h>
 #include <string.h>
@@ -11,6 +11,8 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <time.h>
+
 /*
 // Name: check_ampersand()
 // Feature: Looking for '&' followed by NULL in the avgr
@@ -33,7 +35,7 @@ int check_ampersand(char *argv[], int maxSize)
 	return 0;
 }
 
-/*
+/*3
 // Name: check_greater_than()
 // Feature: Looking for '>' and not followed by NULL in the avgr
 // Return Values: if condition is met return the file name location in the argv array return i+1
@@ -92,6 +94,26 @@ int check_lesser_than(char *argv[], int maxSize)
 }
 
 /*
+// Name: is_echo()
+// Feature: check if the user commands is echo * and then change the command to ls
+// Return Values: return 1 if the command is echo *
+//				  return 0 if the it is just a normal commmand
+*/
+int is_echo(char *argv[], int maxSize)
+{
+	if(strcmp(argv[0],"echo") == 0 && strcmp(argv[1],"*") == 0)
+	{
+		argv[0] = "ls";
+		argv[1] = NULL;
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+/*
 // Name: main()
 // Feature: a Shell that supports 'exit', a command with or without arguments,
 			commands executed with &, redirecting output to a file, and 
@@ -104,8 +126,12 @@ int main() {
   char user_commands[50];
   char *argv[50]; 
   char cwd[50];
+  char time_array[100];
   pid_t pid; // for forking
   FILE *fd; //for freopen commands
+  time_t cur_time;
+  struct tm *time_now;
+  
   
   //Infinite loop, exit only when user enter command 'exit'
   while(1) 
@@ -115,9 +141,13 @@ int main() {
 	closefd = 0;
 	exist_ampersand = 0;
 	sigset(SIGCHLD, SIG_DFL);
-	
-	//Prompting user to enter commands
-    printf("Commands:");
+	//Getting Current time
+	cur_time = time(NULL);
+	time_now = localtime(&cur_time);
+	strftime(time_array, 100, "%a %b %d %Y %H:%M:%S# ", time_now);
+	printf("%s", time_array);
+	//cur_time_struct = *localtime(&cur_time);
+	//printf("%d:%d:%d#", cur_time_struct.tm_hour, cur_time_struct.tm_min, cur_time_struct.tm_sec);
     //Getting the user commands
     if(fgets(user_commands, 50, stdin) == NULL)
     {
@@ -197,6 +227,14 @@ int main() {
 			}
 			else
 			{
+				if(is_echo(argv, 50))
+				{
+					if(execvp(argv[0], argv) == -1)
+					{
+					printf("ERROR: %s \n", strerror(errno));
+					}
+					continue;
+				}
 				//Execute user's command
 				if(execvp(argv[0], argv) == -1)
 				{
@@ -214,3 +252,4 @@ int main() {
   }
   return 0;
 }
+
