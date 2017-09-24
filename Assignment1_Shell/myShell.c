@@ -3,7 +3,9 @@
 // File name: myShell.c
 // Author: Eton Kan
 // Student Number: 301235768
-// Date: Sept 18,2017
+// Due Date: Sept 29, 2017
+// Date Created: Sept 18,2017
+// Last Modify: Sept 23,2017
 */
 #include <stdio.h>
 #include <string.h>
@@ -12,6 +14,9 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <time.h>
+//For the special case "echo *.txt"
+#include <dirent.h>
+#include <sys/stat.h>
 
 /*
 // Name: check_ampersand()
@@ -95,17 +100,77 @@ int check_lesser_than(char *argv[], int maxSize)
 
 /*
 // Name: is_echo()
-// Feature: check if the user commands is echo * and then change the command to ls
-// Return Values: return 1 if the command is echo *
+// Feature: check if the user's command is echo * and then change the command to ls
+//				  if the user's command is echo *.extension, then look in the current 
+//				working directory and output all filename that have matching extension
+// Return Values: return 2 if the command is echo *.extension
+//				  return 1 if the command is echo *
 //				  return 0 if the it is just a normal commmand
 */
-int is_echo(char *argv[], int maxSize)
+int is_echo(char *argv[], int MaxSize)
 {
+	char cwd[MaxSize];
+	char *user_ext = ".";
+	char *file_ext = ".";
+	struct dirent *p_file;
+	struct stat statbuf;
+	DIR *p_directory; //Special Data type for opendir
 	if(strcmp(argv[0],"echo") == 0 && strcmp(argv[1],"*") == 0)
 	{
+		//The Linux command echo * is same as the command ls 
 		argv[0] = "ls";
 		argv[1] = NULL;
 		return 1;
+	}
+	else if(strcmp(argv[0],"echo") == 0 && strchr(argv[1],'.') != NULL)
+	{
+		//Getting the extension of user's command by looking the last period 
+		user_ext = strrchr(argv[1], '.');
+		if(user_ext == NULL)
+		{
+			printf("ERROR: Unable to get user command's extension\n");
+			return 0;
+		}
+		//Getting the current working directory
+		getcwd(cwd, sizeof(cwd));
+		if(cwd == NULL)
+		{
+			printf("ERROR: Unable to get current working directory\n");
+			return 0;
+		}
+		//Opening and changing the working directory
+		p_directory = opendir(cwd);
+		if (p_directory == NULL)
+		{
+			printf("ERROR: Unable to open directory\n");
+			return 0;
+		}
+		chdir(cwd);
+		//Checking all the file extensions in the directory to see if it matches user's extension
+		while((p_file = readdir(p_directory)) != NULL)
+		{
+			//Grabbing information about the file
+			lstat(p_file->d_name, &statbuf);
+			//Checking the file current pointing to is it a regular file
+			if(S_ISREG(statbuf.st_mode))
+			{
+				//Getting the extension by looking the last period
+				file_ext = strrchr(p_file->d_name, '.');
+				if (file_ext == NULL)
+				{
+					//The current file is not a a regular file
+					continue;
+				}
+				//Comparing both extensions
+				if(strcmp(file_ext, user_ext) == 0)
+				{
+					printf("%s ", p_file->d_name);
+				}
+			}
+		}
+		closedir(p_directory);
+		printf("\n");
+		return 2;
 	}
 	else
 	{
@@ -123,6 +188,7 @@ int is_echo(char *argv[], int maxSize)
 */
 int main() {
   int i, exist_ampersand, closefd, exist_greater_than, exist_lesser_than;
+  int test_echo;
   char user_commands[50];
   char *argv[50]; 
   char cwd[50];
@@ -138,16 +204,15 @@ int main() {
   {
     //Setting all values to default values
 	i = 0;
+	test_echo = 0;
 	closefd = 0;
 	exist_ampersand = 0;
 	sigset(SIGCHLD, SIG_DFL);
-	//Getting Current time
+	//Getting and Printing Current time
 	cur_time = time(NULL);
 	time_now = localtime(&cur_time);
 	strftime(time_array, 100, "%a %b %d %Y %H:%M:%S# ", time_now);
 	printf("%s", time_array);
-	//cur_time_struct = *localtime(&cur_time);
-	//printf("%d:%d:%d#", cur_time_struct.tm_hour, cur_time_struct.tm_min, cur_time_struct.tm_sec);
     //Getting the user commands
     if(fgets(user_commands, 50, stdin) == NULL)
     {
@@ -227,12 +292,16 @@ int main() {
 			}
 			else
 			{
-				if(is_echo(argv, 50))
+				if((test_echo = is_echo(argv, 50)) == 1)
 				{
 					if(execvp(argv[0], argv) == -1)
 					{
 					printf("ERROR: %s \n", strerror(errno));
 					}
+					continue;
+				}
+				else if (test_echo == 2)
+				{
 					continue;
 				}
 				//Execute user's command
@@ -252,4 +321,5 @@ int main() {
   }
   return 0;
 }
+
 
